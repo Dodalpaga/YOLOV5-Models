@@ -209,7 +209,7 @@ class Detection:
 
 def gen():
     # Par défaut, le script python nous situe au chemin /var/www/html
-    detector = Detection(capture_index=0, model_name='./components/weights.pt')
+    detector = Detection(capture_index=0, model_name='./models/yolov5n.pt')
     video = detector.get_video_capture()
     width  = video.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
     height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float `height`
