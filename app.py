@@ -4,11 +4,6 @@ import torch
 import cv2
 import numpy as np
 import glob
-import pathlib
-import psycopg2
-import pickle
-import io
-from os.path import exists
 
 UPLOAD_FOLDER = './components'
 DATASET_FOLDER = './components/Test'
@@ -32,18 +27,11 @@ def index():
 ###################################################
 @app.route('/interface', methods=['GET', 'POST'])
 def interface():
-    connection = psycopg2.connect(user="adfqfuacdfwvou",
-                                    password="bc99fef997ae3c47d5d154713001a077738d5285982a985c915163ef07607624",
-                                    host="ec2-107-22-122-106.compute-1.amazonaws.com",
-                                    database="d5vdd7u7kv7vlk")
-    cursor = connection.cursor()
-    cursor.execute("SELECT model_name FROM models")
-    models_names_from_db = cursor.fetchall()
+    models_names_from_db = os.listdir("./models")
+    print(models_names_from_db)
     items = []
     for model_name in models_names_from_db:
-        items.append(model_name[0])
-    cursor.close()
-    connection.commit()
+        items.append(model_name)
     image_names = [f for f in os.listdir('./components/Test/Images_predites') if not f.startswith('.')]
     return render_template("interface.html", image_names=image_names,items=items)
 
@@ -171,6 +159,7 @@ class Detection:
         Loads Yolo5 model from pytorch hub.
         :return: Trained Pytorch model.
         """
+        print(model_name)
         if model_name:
             model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
             print("Model Loaded :!", model_name)
@@ -259,7 +248,7 @@ def stream_page():
 ########### INFERENCE #############################
 ###################################################
 
-def make_inferences_on_folder(model_name="base_yolo_dict",conf_thres=0.25,iou=0.45):
+def make_inferences_on_folder(model_name="weights.pt",conf_thres=0.25,iou=0.45):
 
     # Images
     imgs=[]
@@ -270,19 +259,7 @@ def make_inferences_on_folder(model_name="base_yolo_dict",conf_thres=0.25,iou=0.
         
     if len(imgs)!=0:
         # Model
-        connection = psycopg2.connect(user="adfqfuacdfwvou",
-                                    password="bc99fef997ae3c47d5d154713001a077738d5285982a985c915163ef07607624",
-                                    host="ec2-107-22-122-106.compute-1.amazonaws.com",
-                                    database="d5vdd7u7kv7vlk")
-        cursor = connection.cursor()
-        select_query = "SELECT * FROM models where model_name='{}'".format(model_name)
-        cursor.execute(select_query)
-        models_from_db = cursor.fetchone()
-        models_from_db
-        cursor.close()
-        connection.commit()
-        open("test.pt", "wb").write(pickle.loads(models_from_db[2]))
-        model = torch.hub.load("ultralytics/yolov5","custom",path="test.pt")
+        model = torch.hub.load("ultralytics/yolov5","custom",path="./models/"+model_name)
         model.conf = conf_thres  # confidence threshold (0-1)
         model.iou = iou  # NMS IoU threshold (0-1)
         results = model(imgs)  # custom inference size
