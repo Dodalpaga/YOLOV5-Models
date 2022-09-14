@@ -43,7 +43,29 @@
         </li>
       </ul>
     </div>
-    <img src="{{ url_for('video_feed') }}" />
+    <form method="POST" action="/video_feed">
+      <div class="form-cols" style="align-items: center">
+        <div class="model_selector" style="margin-right: 5%">
+          <select id="model_names" name="model_names">
+            {% for item in items %}
+            <option name="model_name" value="{{ item }}">{{ item }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="source_selector" style="margin-right: 5%">
+          <select id="sources" name="sources">
+            {% for source,address in sources.items() %}
+            <option name="sources" value="{{ address }}">{{ source }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-1 btn-sep icon-network">
+            Inference
+          </button>
+        </div>
+      </div>
+    </form>
 
     <div class="footer">By Dorian VOYDIE</div>
   </body>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, Response, send_from_directory
+from flask import Flask, render_template, request, flash, redirect, Response, send_from_directory, send_file
 import os,time
 import torch
 import cv2
@@ -17,6 +17,11 @@ app.config['DATASET_FOLDER'] = DATASET_FOLDER
 app.config['ALLOWED_IMAGES'] = ALLOWED_IMAGES
 app.config['ALLOWED_LABELS'] = ALLOWED_LABELS
 
+models_names_from_db = os.listdir("./models")
+items = []
+for model_name in models_names_from_db:
+    items.append(model_name)
+sources = {"Stand Camera":"http://10.89.155.165:8000/stream.mjpg","Laptop Camera":0}
 
 @app.route('/')
 def index():
@@ -28,7 +33,6 @@ def index():
 @app.route('/interface', methods=['GET', 'POST'])
 def interface():
     models_names_from_db = os.listdir("./models")
-    print(models_names_from_db)
     items = []
     for model_name in models_names_from_db:
         items.append(model_name)
@@ -39,13 +43,6 @@ def interface():
 def send_image(filename):
     return send_from_directory("./components/Test/Images_predites", filename)
 
-###################################################
-########### SLIDESHOW GALLERY #####################
-###################################################
-@app.route('/slideshow', methods=['GET', 'POST'])
-def slideshow():
-    image_names = [f for f in os.listdir('./components/Test/Images_predites') if not f.startswith('.')]
-    return render_template("slideshow.html", image_names=image_names)
 
 ###################################################
 ########### DOCUMENT ##############################
@@ -161,10 +158,12 @@ class Detection:
         """
         print(model_name)
         if model_name:
-            model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
+            model = torch.hub.load('./yolov5', 'custom', path=model_name, force_reload=True, trust_repo=True, source='local')
+            model.conf=0.15
+            model.iou=0.45
             print("Model Loaded :!", model_name)
         else:
-            model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, force_reload=True)
+            model = torch.hub.load('./yolov5', 'yolov5s', pretrained=True, force_reload=True, trust_repo=True, source='local')
         return model
 
     def score_frame(self, frame):
@@ -207,9 +206,9 @@ class Detection:
 
         return frame
 
-def gen():
+def gen(source,model_name):
     # Par défaut, le script python nous situe au chemin /var/www/html
-    detector = Detection(capture_index=0, model_name='./models/yolov5n.pt')
+    detector = Detection(capture_index=source, model_name='./models/{}'.format(model_name)) # capture_index=0 for laptop webcam
     video = detector.get_video_capture()
     width  = video.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
     height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float `height`
@@ -235,14 +234,20 @@ def gen():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
-@app.route('/video_feed')
+@app.route('/video_feed', methods=['POST','GET'])
 def video_feed():
-    return Response(gen(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    if request.method == 'POST':
+        source = request.form['sources']
+        if source=='0':
+            source=0
+        model_name = request.form['model_names']
+        return Response(gen(source,model_name),mimetype='multipart/x-mixed-replace; boundary=frame')
+    else:
+        return render_template("live_streaming.html",items=items,sources=sources)
 
-@app.route("/stream")
+@app.route("/stream", methods=['POST','GET'])
 def stream_page():
-	return render_template("live_streaming.html")
+    return render_template("live_streaming.html",items=items,sources=sources)
 
 ###################################################
 ########### INFERENCE #############################
@@ -259,7 +264,7 @@ def make_inferences_on_folder(model_name="weights.pt",conf_thres=0.25,iou=0.45):
         
     if len(imgs)!=0:
         # Model
-        model = torch.hub.load("ultralytics/yolov5","custom",path="./models/"+model_name)
+        model = torch.hub.load("./yolov5","custom",path="./models/"+model_name,source='local',trust_repo=True)
         model.conf = conf_thres  # confidence threshold (0-1)
         model.iou = iou  # NMS IoU threshold (0-1)
         results = model(imgs)  # custom inference size
