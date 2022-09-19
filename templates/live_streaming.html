@@ -45,14 +45,16 @@
     </div>
     <form method="POST" action="/stream">
       <div class="form-cols" style="align-items: center">
-        <div class="model_selector" style="margin-right: 5%">
+        <div class="box" style="margin-right: 5%">
+          Models
           <select id="model_names" name="model_names">
             {% for item in items %}
             <option name="model_name" value="{{ item }}">{{ item }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="source_selector" style="margin-right: 5%">
+        <div class="box" style="margin-right: 5%">
+          Sources
           <select id="sources" name="sources">
             {% for source,address in sources.items() %}
             <option name="sources" value="{{ address }}">{{ source }}</option>
@@ -60,8 +62,8 @@
           </select>
         </div>
         <div>
-          <button type="submit" class="btn btn-1 btn-sep icon-network">
-            Inference
+          <button type="submit" class="btn btn-1 btn-sep icon-stream">
+            Streaming
           </button>
         </div>
       </div>

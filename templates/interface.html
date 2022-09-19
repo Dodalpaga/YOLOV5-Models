@@ -97,7 +97,8 @@
       <div class="form-cols">
         <form method="POST" action="/inference">
           <div class="form-cols" style="align-items: center">
-            <div class="model_selector" style="margin-right: 15%">
+            <div class="box">
+              Models
               <select id="model_names" name="model_names">
                 {% for item in items %}
                 <option name="model_name" value="{{ item }}">{{ item }}</option>
