@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, Response, send_from_directory, send_file
+from flask import Flask, render_template, request, flash, redirect, Response, send_from_directory
 import os,time
 import torch
 import cv2
@@ -19,9 +19,9 @@ app.config['ALLOWED_LABELS'] = ALLOWED_LABELS
 
 models_names_from_db = os.listdir("./models")
 items = []
-for model_name in models_names_from_db:
-    items.append(model_name)
-sources = {"Stand Camera":"http://10.89.155.165:8000/stream.mjpg","Laptop Camera":0}
+for model_names in models_names_from_db:
+    items.append(model_names)
+sources = {"Laptop Camera":0,"Stand Camera":"http://10.89.155.165:8000/stream.mjpg"}
 
 @app.route('/')
 def index():
@@ -206,48 +206,62 @@ class Detection:
 
         return frame
 
-def gen(source,model_name):
-    # Par défaut, le script python nous situe au chemin /var/www/html
-    detector = Detection(capture_index=source, model_name='./models/{}'.format(model_name)) # capture_index=0 for laptop webcam
-    video = detector.get_video_capture()
-    width  = video.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
-    height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float `height`
-    while True:
-        success, image = video.read()
-        assert success
-        
-        frame = cv2.resize(image, (int(width),int(height)))
-        
-        start_time = time.time()
-        results = detector.score_frame(frame)
-        frame = detector.plot_boxes(results, frame)
-        
-        end_time = time.time()
-        fps = 1/np.round(end_time - start_time, 2)
-            
-        cv2.putText(frame, f'FPS: {int(fps)}', (20,70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2)
-        
-        ret, jpeg = cv2.imencode('.jpg', frame)
-
-        frame = jpeg.tobytes()
-        
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
-@app.route('/video_feed', methods=['POST','GET'])
-def video_feed():
+@app.route("/stream", methods=['POST','GET'])
+def stream_page():
     if request.method == 'POST':
         source = request.form['sources']
         if source=='0':
             source=0
         model_name = request.form['model_names']
-        return Response(gen(source,model_name),mimetype='multipart/x-mixed-replace; boundary=frame')
     else:
-        return render_template("live_streaming.html",items=items,sources=sources)
+        model_name="None"
+        source="None"
+    print(model_name)
+    print(source)
+    return render_template("live_streaming.html",items=items,sources=sources,model_name=model_name,source=source)
 
-@app.route("/stream", methods=['POST','GET'])
-def stream_page():
-    return render_template("live_streaming.html",items=items,sources=sources)
+@app.route('/video_feed', methods=['POST','GET'])
+def video_feed():
+    def gen(source,model_name):
+        if (source!="None") and (model_name!="None"):
+            # Par défaut, le script python nous situe au chemin /var/www/html
+            detector = Detection(capture_index=source, model_name='./models/{}'.format(model_name)) # capture_index=0 for laptop webcam
+            video = detector.get_video_capture()
+            width  = video.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
+            height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float `height`
+            while True:
+                success, image = video.read()
+                assert success
+                
+                frame = cv2.resize(image, (int(width),int(height)))
+                
+                start_time = time.time()
+                results = detector.score_frame(frame)
+                frame = detector.plot_boxes(results, frame)
+                
+                end_time = time.time()
+                fps = 1/np.round(end_time - start_time, 2)
+                    
+                cv2.putText(frame, f'FPS: {int(fps)}', (20,70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,255,0), 2)
+                
+                ret, jpeg = cv2.imencode('.jpg', frame)
+
+                frame = jpeg.tobytes()
+                
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+                time.sleep(0.01)
+    if request.method == 'GET':
+        print(request.args)
+        source = request.args['source']
+        if source=='0':
+            source=0
+        model_name = request.args['model_name']
+        return app.response_class(gen(source,model_name),mimetype='multipart/x-mixed-replace; boundary=frame')
+    else:
+        return "None"
+
+
 
 ###################################################
 ########### INFERENCE #############################

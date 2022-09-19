@@ -43,7 +43,7 @@
         </li>
       </ul>
     </div>
-    <form method="POST" action="/video_feed">
+    <form method="POST" action="/stream">
       <div class="form-cols" style="align-items: center">
         <div class="model_selector" style="margin-right: 5%">
           <select id="model_names" name="model_names">
@@ -66,6 +66,19 @@
         </div>
       </div>
     </form>
+    <iframe
+      id="Iframe"
+      frameborder="0"
+      style="
+        background: transparent;
+        width: 640px;
+        height: 480px;
+        overflow: auto;
+        text-align: center;
+      "
+      src="{{ url_for('video_feed',model_name=model_name,source=source) }}"
+    >
+    </iframe>
 
     <div class="footer">By Dorian VOYDIE</div>
   </body>
