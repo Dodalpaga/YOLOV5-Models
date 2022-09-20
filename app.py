@@ -274,7 +274,8 @@ def make_inferences_on_folder(model_name="weights.pt",conf_thres=0.25,iou=0.45):
     imgs_paths = glob.glob("components/Test/*.jpeg") + glob.glob("components/Test/*.jpg")
     for f in imgs_paths:
         img = cv2.imread(f)
-        imgs.append(img)    
+        RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        imgs.append(RGB_img)
         
     if len(imgs)!=0:
         # Model
