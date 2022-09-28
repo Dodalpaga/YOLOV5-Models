@@ -21,7 +21,7 @@ models_names_from_db = os.listdir("./models")
 items = []
 for model_names in models_names_from_db:
     items.append(model_names)
-sources = {"Laptop Camera":0,"Stand Camera":"http://10.89.155.165:8000/stream.mjpg"}
+sources = {"Laptop Camera":0,"Stand Camera":"http://10.89.155.165:8000/stream.mjpg","Nozzle Camera":"http://10.89.155.77:8000/stream.mjpg","Phone Camera":"http://192.168.93.5:8080/video"}
 
 @app.route('/')
 def index():
