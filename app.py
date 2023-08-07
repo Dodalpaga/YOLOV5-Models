@@ -158,12 +158,12 @@ class Detection:
         """
         print(model_name)
         if model_name:
-            model = torch.hub.load('./yolov5', 'custom', path=model_name, force_reload=True, trust_repo=True, source='local')
+            model = torch.hub.load('./yolov5', 'custom', path=model_name, force_reload=True, source='local')
             model.conf=0.05
             model.iou=0.45
             print("Model Loaded :!", model_name)
         else:
-            model = torch.hub.load('./yolov5', 'yolov5s', pretrained=True, force_reload=True, trust_repo=True, source='local')
+            model = torch.hub.load('./yolov5', 'yolov5s', pretrained=True, force_reload=True, source='local')
         return model
 
     def score_frame(self, frame):
@@ -279,7 +279,7 @@ def make_inferences_on_folder(model_name="weights.pt",conf_thres=0.25,iou=0.45):
         
     if len(imgs)!=0:
         # Model
-        model = torch.hub.load("./yolov5","custom",path="./models/"+model_name,source='local',trust_repo=True)
+        model = torch.hub.load("./yolov5","custom",path="./models/"+model_name,source='local')
         model.conf = conf_thres  # confidence threshold (0-1)
         model.iou = iou  # NMS IoU threshold (0-1)
         results = model(imgs)  # custom inference size
